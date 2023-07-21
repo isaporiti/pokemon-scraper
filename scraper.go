@@ -70,8 +70,7 @@ func Scrape() error {
 	scraper := NewScraper()
 
 	scraper.OnError(func(_ *colly.Response, err error) {
-		scraper.failed = true
-		log.Println("Something went wrong: ", err)
+		log.Fatalln("Something went wrong: ", err)
 	})
 
 	scraper.OnHTML("a.page-numbers", func(e *colly.HTMLElement) {
@@ -102,6 +101,14 @@ func Scrape() error {
 	scraper.Visit(firstPage)
 	log.Println("Scraping finished")
 
+	err := saveToCsv(scraper)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return nil
+}
+
+func saveToCsv(scraper *pokemonScraper) error {
 	log.Println("Started writing to CSV")
 	file, err := os.Create("pokemon.csv")
 	if err != nil {
