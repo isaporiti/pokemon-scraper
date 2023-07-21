@@ -3,6 +3,7 @@ package pokemon_store
 import (
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/gocolly/colly"
 )
@@ -25,6 +26,9 @@ func NewScraper() *pokemonScraper {
 }
 
 func (s *pokemonScraper) registerPage(page string) {
+	if _, err := strconv.Atoi(page); err != nil {
+		return
+	}
 	if s.pagesToScrape.contain(page) {
 		return
 	}
@@ -40,6 +44,9 @@ func (s *pokemonScraper) savePokemon(p pokemon) {
 
 func (s *pokemonScraper) nextPage() (url string) {
 	if len(s.pagesToScrape) == 0 {
+		return ""
+	}
+	if s.iteration >= len(s.pagesToScrape) {
 		return ""
 	}
 	pageToScrape := s.pagesToScrape[s.iteration]
@@ -79,6 +86,9 @@ func Scrape() {
 
 	c.OnScraped(func(r *colly.Response) {
 		url := scraper.nextPage()
+		if url == "" {
+			return
+		}
 		c.Visit(url)
 	})
 
