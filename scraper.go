@@ -98,7 +98,11 @@ func Scrape() error {
 	})
 
 	firstPage := getPageUrl("1")
+	log.Println("Scraping started")
 	scraper.Visit(firstPage)
+	log.Println("Scraping finished")
+
+	log.Println("Started writing to CSV")
 	file, err := os.Create("pokemon.csv")
 	if err != nil {
 		return fmt.Errorf("could not create file: %s", err)
@@ -123,6 +127,7 @@ func Scrape() error {
 		}
 		csvWriter.Write(row)
 	}
+	log.Println("Finished writing to CSV")
 	return nil
 }
 
