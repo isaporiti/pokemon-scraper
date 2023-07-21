@@ -13,6 +13,7 @@ type pokemon struct {
 }
 
 type pokemonScraper struct {
+	*colly.Collector
 	pokemonFound  []pokemon
 	pagesToScrape Pages
 	pagesVisited  Pages
@@ -21,6 +22,7 @@ type pokemonScraper struct {
 
 func NewScraper() *pokemonScraper {
 	s := pokemonScraper{}
+	s.Collector = colly.NewCollector()
 	s.pagesVisited = append(s.pagesVisited, "1")
 	return &s
 }
@@ -63,18 +65,17 @@ func (s *pokemonScraper) pokemon() []pokemon {
 
 func Scrape() {
 	scraper := NewScraper()
-	c := colly.NewCollector()
 
-	c.OnError(func(_ *colly.Response, err error) {
+	scraper.OnError(func(_ *colly.Response, err error) {
 		log.Println("Something went wrong: ", err)
 	})
 
-	c.OnHTML("a.page-numbers", func(e *colly.HTMLElement) {
+	scraper.OnHTML("a.page-numbers", func(e *colly.HTMLElement) {
 		page := e.Text
 		scraper.registerPage(page)
 	})
 
-	c.OnHTML("li.product", func(e *colly.HTMLElement) {
+	scraper.OnHTML("li.product", func(e *colly.HTMLElement) {
 		p := pokemon{
 			url:   e.ChildAttr("a", "href"),
 			image: e.ChildAttr("img", "src"),
@@ -84,16 +85,16 @@ func Scrape() {
 		scraper.savePokemon(p)
 	})
 
-	c.OnScraped(func(r *colly.Response) {
+	scraper.OnScraped(func(r *colly.Response) {
 		url := scraper.nextPage()
 		if url == "" {
 			return
 		}
-		c.Visit(url)
+		scraper.Visit(url)
 	})
 
 	firstPage := getPageUrl("1")
-	c.Visit(firstPage)
+	scraper.Visit(firstPage)
 	fmt.Print(len(scraper.pokemon()))
 }
 
