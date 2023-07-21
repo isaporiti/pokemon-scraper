@@ -111,7 +111,7 @@ func Scrape() error {
 
 func saveToCsv(scraper *pokemonScraper) error {
 	log.Println("Started writing to CSV")
-	file, err := os.Create("pokemon.csv")
+	file, err := os.Create("out/pokemon.csv")
 	if err != nil {
 		return fmt.Errorf("could not create file: %s", err)
 	}
