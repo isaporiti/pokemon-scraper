@@ -1,8 +1,10 @@
 package pokemon_store
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 
 	"github.com/gocolly/colly"
@@ -18,6 +20,7 @@ type pokemonScraper struct {
 	pagesToScrape Pages
 	pagesVisited  Pages
 	iteration     int
+	failed        bool
 }
 
 func NewScraper() *pokemonScraper {
@@ -63,10 +66,11 @@ func (s *pokemonScraper) pokemon() []pokemon {
 	return s.pokemonFound
 }
 
-func Scrape() {
+func Scrape() error {
 	scraper := NewScraper()
 
 	scraper.OnError(func(_ *colly.Response, err error) {
+		scraper.failed = true
 		log.Println("Something went wrong: ", err)
 	})
 
@@ -95,7 +99,31 @@ func Scrape() {
 
 	firstPage := getPageUrl("1")
 	scraper.Visit(firstPage)
-	fmt.Print(len(scraper.pokemon()))
+	file, err := os.Create("pokemon.csv")
+	if err != nil {
+		return fmt.Errorf("could not create file: %s", err)
+	}
+	defer file.Close()
+	csvWriter := csv.NewWriter(file)
+	defer csvWriter.Flush()
+
+	headers := []string{
+		"url",
+		"image",
+		"name",
+		"price",
+	}
+	csvWriter.Write(headers)
+	for _, pokemonToWrite := range scraper.pokemon() {
+		row := []string{
+			pokemonToWrite.url,
+			pokemonToWrite.image,
+			pokemonToWrite.name,
+			pokemonToWrite.price,
+		}
+		csvWriter.Write(row)
+	}
+	return nil
 }
 
 func getPageUrl(page string) string {
