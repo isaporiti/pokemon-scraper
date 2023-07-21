@@ -1,4 +1,4 @@
-package pokemon_store
+package scraper
 
 import (
 	"encoding/csv"
@@ -17,12 +17,12 @@ type pokemon struct {
 type pokemonScraper struct {
 	*colly.Collector
 	pokemonFound  []pokemon
-	pagesToScrape Pages
-	pagesVisited  Pages
+	pagesToScrape pages
+	pagesVisited  pages
 	iteration     int
 }
 
-func NewScraper() *pokemonScraper {
+func newScraper() *pokemonScraper {
 	s := pokemonScraper{}
 	s.Collector = colly.NewCollector()
 	s.pagesVisited = append(s.pagesVisited, "1")
@@ -100,7 +100,7 @@ func (s *pokemonScraper) scrape() {
 }
 
 func Scrape() error {
-	scraper := NewScraper()
+	scraper := newScraper()
 	scraper.scrape()
 	err := saveToCsv(scraper)
 	if err != nil {
@@ -143,9 +143,9 @@ func getPageUrl(page string) string {
 	return fmt.Sprintf("https://scrapeme.live/shop/page/%s", page)
 }
 
-type Pages []string
+type pages []string
 
-func (p Pages) contain(page string) bool {
+func (p pages) contain(page string) bool {
 	for _, iterationPage := range p {
 		if iterationPage == page {
 			return true
