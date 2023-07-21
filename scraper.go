@@ -20,7 +20,6 @@ type pokemonScraper struct {
 	pagesToScrape Pages
 	pagesVisited  Pages
 	iteration     int
-	failed        bool
 }
 
 func NewScraper() *pokemonScraper {
@@ -66,41 +65,43 @@ func (s *pokemonScraper) pokemon() []pokemon {
 	return s.pokemonFound
 }
 
-func Scrape() error {
-	scraper := NewScraper()
-
-	scraper.OnError(func(_ *colly.Response, err error) {
+func (s *pokemonScraper) scrape() {
+	s.OnError(func(_ *colly.Response, err error) {
 		log.Fatalln("Something went wrong: ", err)
 	})
 
-	scraper.OnHTML("a.page-numbers", func(e *colly.HTMLElement) {
+	s.OnHTML("a.page-numbers", func(e *colly.HTMLElement) {
 		page := e.Text
-		scraper.registerPage(page)
+		s.registerPage(page)
 	})
 
-	scraper.OnHTML("li.product", func(e *colly.HTMLElement) {
+	s.OnHTML("li.product", func(e *colly.HTMLElement) {
 		p := pokemon{
 			url:   e.ChildAttr("a", "href"),
 			image: e.ChildAttr("img", "src"),
 			name:  e.ChildText("h2"),
 			price: e.ChildText("span.price"),
 		}
-		scraper.savePokemon(p)
+		s.savePokemon(p)
 	})
 
-	scraper.OnScraped(func(r *colly.Response) {
-		url := scraper.nextPage()
+	s.OnScraped(func(r *colly.Response) {
+		url := s.nextPage()
 		if url == "" {
 			return
 		}
-		scraper.Visit(url)
+		s.Visit(url)
 	})
 
 	firstPage := getPageUrl("1")
-	log.Println("Scraping started")
-	scraper.Visit(firstPage)
-	log.Println("Scraping finished")
+	log.Println("Started scraping")
+	s.Visit(firstPage)
+	log.Println("Finished scraping")
+}
 
+func Scrape() error {
+	scraper := NewScraper()
+	scraper.scrape()
 	err := saveToCsv(scraper)
 	if err != nil {
 		log.Fatal(err)
